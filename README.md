@@ -75,7 +75,8 @@ SALS/
 │   │   ├── views.py      # API endpoint implementations
 │   │   ├── prompts.py    # AI prompt templates
 │   │   ├── models.py     # Database models
-│   │   └── openrouter.py # AI integration
+│   │   ├── openrouter.py # AI integration with LangChain
+│   │   └── langchain_integration.py # LangChain implementation
 │   ├── manage.py         # Django management script
 │   └── db.sqlite3        # SQLite database
 ├── frontend/
@@ -123,6 +124,7 @@ SALS/
 - pip (Python package manager)
 - Virtual environment (recommended)
 - OpenRouter API key
+- LangSmith API key
 - Node.js and npm (for frontend)
 
 ## Installation
@@ -152,6 +154,9 @@ Create a `.env` file in the backend directory with:
 ```
 OPENROUTER_API_KEY=your_api_key_here
 HTTP_REFERER=http://localhost:8000
+LANGCHAIN_API_KEY=your_langsmith_api_key
+LANGCHAIN_PROJECT=adaptive-learning-platform
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
 ```
 
 5. Run migrations:
@@ -176,24 +181,52 @@ npm start
 
 The backend server will run at `http://127.0.0.1:8000/` and the frontend at `http://localhost:3000`
 
+## AI Integration
+
+### LangChain Integration
+- Uses LangChain for structured AI interactions
+- Implements custom prompt templates
+- Handles AI response processing
+- Manages conversation context
+- Provides error handling and retry logic
+
+### LangSmith Monitoring
+- Tracks all AI interactions
+- Monitors prompt effectiveness
+- Logs performance metrics
+- Provides debugging capabilities
+- Enables prompt optimization
+
+To view LangSmith data:
+1. Go to https://smith.langchain.com/
+2. Log in with your credentials
+3. Select the "adaptive-learning-platform" project
+4. View runs, metrics, and performance data
+
 ## Recent Updates
 
-1. Quiz Management
+1. AI Integration
+   - Added LangChain integration for better AI handling
+   - Implemented LangSmith monitoring
+   - Enhanced prompt engineering
+   - Improved error handling and logging
+
+2. Quiz Management
    - Fixed quiz ID generation to prevent duplicate IDs
    - Added persistent storage of quiz attempts
    - Improved error handling for quiz submissions
 
-2. User Progress Tracking
+3. User Progress Tracking
    - Added local storage integration for user answers
    - Implemented quiz attempt history
    - Enhanced progress tracking across sessions
 
-3. Analytics Improvements
+4. Analytics Improvements
    - Added detailed performance metrics
    - Implemented concept-specific analysis
    - Enhanced feedback generation
 
-4. Frontend Enhancements
+5. Frontend Enhancements
    - Added responsive UI components
    - Improved error handling
    - Enhanced user feedback
@@ -203,6 +236,8 @@ The backend server will run at `http://127.0.0.1:8000/` and the frontend at `htt
 
 - Built with Django REST framework and React
 - Uses OpenRouter for AI-powered features
+- Implements LangChain for structured AI interactions
+- Uses LangSmith for monitoring and debugging
 - Implements custom prompt engineering for optimal learning outcomes
 - RESTful API design with JSON responses
 - Focuses on reinforcement learning and continuous improvement
