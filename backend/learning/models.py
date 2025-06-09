@@ -24,6 +24,7 @@ class UserQuizAttempt(models.Model):
     user_answers = models.JSONField(null=True, blank=True)  # Allow null values
     score = models.FloatField(null=True, blank=True)
     weak_concepts = models.JSONField(null=True, blank=True)  # Stores identified weak concepts
+    all_concepts = models.JSONField(null=True, blank=True)  # Stores all concepts from the quiz
     completed_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -31,6 +32,7 @@ class UserQuizAttempt(models.Model):
 
 class LearningPath(models.Model):
     weak_concepts = models.JSONField()  # Stores the weak concepts
+    all_concepts = models.JSONField(null=True, blank=True)  # Stores all concepts from the quiz
     learning_materials = models.JSONField()  # Stores the generated learning path
     created_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)

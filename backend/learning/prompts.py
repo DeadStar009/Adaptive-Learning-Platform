@@ -51,26 +51,61 @@ Quiz Attempts:
 {qa_pairs}
 """
 
-def generate_learning_path_prompt(weak_concepts):
-    concept_list = ', '.join(weak_concepts)
+def generate_learning_path_prompt(weak_concepts, all_concepts):
+    weak_concept_list = ', '.join(weak_concepts)
+    all_concept_list = ', '.join(all_concepts)
     return f"""
-You are an expert tutor guiding a student through weaknesses in DSA.
+You are an expert tutor creating a comprehensive learning path for DSA.
 
-For each of these concepts: {concept_list}
-Do the following:
-1. Give a brief 2–3 line explanation (not definition, a teaching tip)
-2. Suggest a high-quality online resource (GFG, YouTube, docs)
+The student needs to learn these concepts: {all_concept_list}
+They particularly struggled with these concepts: {weak_concept_list}
 
-Return as a pure JSON array:
+Create a learning path that:
+1. Covers ALL concepts in a logical progression
+2. Gives extra attention and practice to weak concepts
+3. Shows how concepts relate to each other
+4. Includes both theory and practical exercises
+
+For each concept, provide:
+1. A brief 2-3 line explanation (teaching tip, not just definition)
+2. A high-quality online resource (GFG, YouTube, docs)
+3. Practice exercises or problems to solve
+4. For weak concepts, add extra practice problems
+
+IMPORTANT: Return ONLY a valid JSON array with no additional text, markdown, or explanations.
+Each object in the array must follow this exact format:
+
 [
   {{
-    "concept": "Dynamic Programming",
-    "explanation": "...",
-    "resource": "https://..."
-  }},
-  ...
+    "concept": "string",
+    "explanation": "string",
+    "resource": "string (URL)",
+    "practice_problems": ["string", "string"],
+    "is_weak_concept": boolean,
+    "related_concepts": ["string", "string"]
+  }}
 ]
-No markdown. No extra text.
+
+Rules:
+1. Use double quotes for all strings
+2. Use true/false (not "true"/"false") for boolean values
+3. Ensure all arrays and objects are properly closed
+4. No trailing commas
+5. No comments or explanations
+6. No markdown formatting
+
+Example of a single object:
+{{
+  "concept": "Dynamic Programming",
+  "explanation": "A method for solving complex problems by breaking them down into simpler subproblems",
+  "resource": "https://www.geeksforgeeks.org/dynamic-programming/",
+  "practice_problems": ["Fibonacci Numbers", "Longest Common Subsequence"],
+  "is_weak_concept": true,
+  "related_concepts": ["Recursion", "Memoization"]
+}}
+
+Order the concepts in a way that builds understanding progressively.
+For weak concepts, include more practice problems and detailed explanations.
 """
 
 def generate_final_quiz_prompt(topic, weak_concepts, initial_weak_concepts):

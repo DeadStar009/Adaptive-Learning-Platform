@@ -15,6 +15,9 @@ import {
   Alert,
   Button,
   Grid,
+  Chip,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import {
   School as SchoolIcon,
@@ -22,6 +25,9 @@ import {
   Code as CodeIcon,
   Assignment as AssignmentIcon,
   CheckCircle as CheckCircleIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -30,6 +36,7 @@ const LearningPath = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [completedItems, setCompletedItems] = useState(new Set());
+  const [expandedConcepts, setExpandedConcepts] = useState(new Set());
 
   useEffect(() => {
     fetchLearningPath();
@@ -41,8 +48,9 @@ const LearningPath = () => {
       setError(null);
       const quizAttemptId = localStorage.getItem('lastQuizAttemptId');
       const weakConcepts = localStorage.getItem('weakConcepts');
+      const allConcepts = localStorage.getItem('allConcepts');
       
-      if (!quizAttemptId || !weakConcepts) {
+      if (!quizAttemptId || !weakConcepts || !allConcepts) {
         setError('No quiz attempt found. Please take a quiz first.');
         setLoading(false);
         return;
@@ -50,7 +58,8 @@ const LearningPath = () => {
 
       const response = await axios.post('http://localhost:8000/api/learning-path/', {
         quiz_attempt_id: quizAttemptId,
-        weak_concepts: JSON.parse(weakConcepts)
+        weak_concepts: JSON.parse(weakConcepts),
+        all_concepts: JSON.parse(allConcepts)
       });
       console.log('quiz attempt id', quizAttemptId)
       console.log('weak concepts', weakConcepts)
@@ -66,6 +75,18 @@ const LearningPath = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleConcept = (concept) => {
+    setExpandedConcepts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(concept)) {
+        newSet.delete(concept);
+      } else {
+        newSet.add(concept);
+      }
+      return newSet;
+    });
   };
 
   const markAsCompleted = (concept) => {
@@ -141,20 +162,79 @@ const LearningPath = () => {
         </Typography>
         
         <Alert severity="info" sx={{ mb: 4 }}>
-          This personalized learning path is designed to help you improve in areas where you need more practice.
+          This comprehensive learning path covers all concepts, with extra focus on areas where you need more practice.
         </Alert>
 
         <Grid container spacing={3}>
           {learningPath.map((item, index) => (
             <Grid item xs={12} key={index}>
-              <Card>
+              <Card sx={{ 
+                borderLeft: item.is_weak_concept ? '4px solid #f44336' : '4px solid #4caf50',
+                position: 'relative'
+              }}>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {item.concept}
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                      {item.concept}
+                    </Typography>
+                    <Box>
+                      {item.is_weak_concept && (
+                        <Chip 
+                          label="Needs Focus" 
+                          color="error" 
+                          size="small" 
+                          sx={{ mr: 1 }}
+                        />
+                      )}
+                      <IconButton onClick={() => toggleConcept(item.concept)}>
+                        {expandedConcepts.has(item.concept) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      </IconButton>
+                    </Box>
+                  </Box>
+
                   <Typography variant="body2" color="text.secondary" paragraph>
                     {item.explanation}
                   </Typography>
+
+                  <Collapse in={expandedConcepts.has(item.concept)}>
+                    <Box sx={{ mt: 2, mb: 2 }}>
+                      {item.related_concepts && item.related_concepts.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Related Concepts:
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {item.related_concepts.map((related, idx) => (
+                              <Chip 
+                                key={idx}
+                                label={related}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {item.practice_problems && item.practice_problems.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Practice Problems:
+                          </Typography>
+                          <List dense>
+                            {item.practice_problems.map((problem, idx) => (
+                              <ListItem key={idx}>
+                                <ListItemIcon>
+                                  <CodeIcon />
+                                </ListItemIcon>
+                                <ListItemText primary={problem} />
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Box>
+                      )}
+                    </Box>
+                  </Collapse>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Button
@@ -163,7 +243,7 @@ const LearningPath = () => {
                       href={item.resource}
                       target="_blank"
                       rel="noopener noreferrer"
-                      startIcon={<BookIcon />}
+                      startIcon={<LinkIcon />}
                     >
                       Learn More
                     </Button>

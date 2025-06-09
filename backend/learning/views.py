@@ -49,6 +49,9 @@ def analyze_quiz(request):
         quiz = Quiz.objects.get(id=quiz_id)
         questions = quiz.questions
 
+        # Extract all concepts from the quiz
+        all_concepts = list(set(q["concept"] for q in questions))
+
         prompt = generate_analysis_prompt(questions, user_answers)
         result = call_openrouter(prompt)
         raw = result['choices'][0]['message']['content']
@@ -56,9 +59,10 @@ def analyze_quiz(request):
 
         # Save the quiz attempt using the existing quiz
         quiz_attempt = UserQuizAttempt.objects.create(
-            quiz=quiz,  # Use the existing quiz
+            quiz=quiz,
             user_answers=user_answers,
-            weak_concepts=weak_concepts
+            weak_concepts=weak_concepts,
+            all_concepts=all_concepts  # Store all concepts
         )
 
         # Create or update progress
@@ -69,6 +73,7 @@ def analyze_quiz(request):
 
         return JsonResponse({
             "weak_concepts": weak_concepts,
+            "all_concepts": all_concepts,  # Return all concepts
             "quiz_attempt_id": quiz_attempt.id
         })
 
@@ -84,17 +89,37 @@ def learning_path(request):
         data = json.loads(request.body)
         quiz_attempt_id = data.get("quiz_attempt_id")
         weak_concepts = data.get("weak_concepts", [])
+        all_concepts = data.get("all_concepts", [])  # Get all concepts
 
         quiz_attempt = UserQuizAttempt.objects.get(id=quiz_attempt_id)
         
-        prompt = generate_learning_path_prompt(weak_concepts)
+        # Generate learning path that includes all concepts but emphasizes weak ones
+        prompt = generate_learning_path_prompt(weak_concepts, all_concepts)
         result = call_openrouter(prompt)
         raw = result['choices'][0]['message']['content']
-        learning_path_data = json.loads(raw.strip().replace("```json", "").replace("```", ""))
+        
+        # Clean the response and ensure it's valid JSON
+        cleaned = raw.strip()
+        # Remove any markdown code block indicators
+        cleaned = re.sub(r'^```json\s*|\s*```$', '', cleaned)
+        # Remove any trailing commas in arrays and objects
+        cleaned = re.sub(r',(\s*[}\]])', r'\1', cleaned)
+        # Ensure all property names are in double quotes
+        cleaned = re.sub(r'([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'\1"\2":', cleaned)
+        
+        try:
+            learning_path_data = json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            return JsonResponse({
+                "error": f"Invalid JSON in learning path response: {str(e)}",
+                "raw_response": raw,
+                "cleaned_response": cleaned
+            }, status=500)
 
         # Save the learning path
         learning_path = LearningPath.objects.create(
             weak_concepts=weak_concepts,
+            all_concepts=all_concepts,  # Store all concepts
             learning_materials=learning_path_data
         )
 
