@@ -9,18 +9,33 @@ Rules:
 - Cover a wide range of sub-concepts
 - Use clear, concise questions and 4 options (A–D)
 - Each must include: question, options, correct answer (A/B/C/D), difficulty, and concept
+- IMPORTANT: Format options as "A) Option text", "B) Option text", etc.
+- The answer should be just the letter (A/B/C/D)
 
 Return output in *pure* JSON format (no explanation, no markdown), like:
 [
   {{
-    "question": "...",
-    "options": ["A", "B", "C", "D"],
+    "question": "Which is a classic Divide and Conquer algorithm for searching in sorted arrays?",
+    "options": [
+      "A) Linear Search",
+      "B) Binary Search",
+      "C) Jump Search",
+      "D) Interpolation Search"
+    ],
     "answer": "B",
     "difficulty": "medium",
-    "concept": "Topological Sort"
+    "concept": "Binary Search"
   }},
   ...
 ]
+
+IMPORTANT FORMATTING RULES:
+1. Options MUST be formatted as "Letter) Option text" (e.g., "A) Option text")
+2. The answer field should contain ONLY the letter (A/B/C/D)
+3. Use double quotes for all strings
+4. No trailing commas
+5. No markdown formatting
+6. No additional text or explanations
 """
 
 def generate_analysis_prompt(questions, answers):
