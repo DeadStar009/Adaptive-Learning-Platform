@@ -23,6 +23,7 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 
 const Analytics = () => {
@@ -228,9 +229,42 @@ const Analytics = () => {
                   <TrendingUpIcon sx={{ mr: 1 }} />
                   <Typography variant="h6">Detailed Feedback</Typography>
                 </Box>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                  {analytics.detailed_feedback}
-                </Typography>
+                <Box sx={{ 
+                  '& h3': { 
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    mt: 3,
+                    mb: 2,
+                    color: 'primary.main'
+                  },
+                  '& h4': {
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold',
+                    mt: 2,
+                    mb: 1,
+                    color: 'text.primary'
+                  },
+                  '& ul': {
+                    pl: 3,
+                    mb: 2
+                  },
+                  '& li': {
+                    mb: 1
+                  },
+                  '& p': {
+                    mb: 2
+                  },
+                  '& strong': {
+                    fontWeight: 'bold'
+                  },
+                  '& em': {
+                    fontStyle: 'italic'
+                  }
+                }}>
+                  <ReactMarkdown>
+                    {analytics.detailed_feedback}
+                  </ReactMarkdown>
+                </Box>
               </CardContent>
             </Card>
           </Grid>

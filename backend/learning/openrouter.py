@@ -81,6 +81,7 @@ def call_openrouter(prompt, model="deepseek/deepseek-r1-0528-qwen3-8b:free"):
         "messages": messages
     }
     
+    run_id = None
     try:
         logger.debug("Making API call to OpenRouter...")
         
@@ -108,47 +109,50 @@ def call_openrouter(prompt, model="deepseek/deepseek-r1-0528-qwen3-8b:free"):
                 "start_time": current_time,
                 "metadata": {
                     "model": model,
-                    "api": "openrouter"
+                    "api": "openrouter",
+                    "request_id": str(uuid.uuid4())
                 }
             }
+            
             try:
                 logger.debug("Run data:\n" + json.dumps(run_data, indent=2, default=str))
             except Exception as e:
                 logger.warning(f"Failed to log run_data: {e}")
 
             try:
+                # Create the run and get the run ID
                 run = client.create_run(**run_data)
-                logger.debug(f"LangSmith create_run response: {run}")
-                
-                # Handle the case where run is None or not a proper run object
-                if run is None:
-                    logger.warning("LangSmith create_run returned None - this might be expected for async operations")
-                    # Create a temporary run ID for tracking
-                    run_id = str(uuid.uuid4())
+                if run and hasattr(run, 'id'):
+                    run_id = run.id
+                    logger.debug(f"Successfully created LangSmith run with ID: {run_id}")
                 else:
-                    run_id = getattr(run, 'id', str(uuid.uuid4()))
+                    run_id = str(uuid.uuid4())
+                    logger.warning(f"LangSmith create_run returned invalid run object, using generated ID: {run_id}")
                 
                 # Update the run with the response
                 end_time = datetime.now(timezone.utc)
-                client.update_run(
-                    run_id=run_id,
-                    outputs={
+                update_data = {
+                    "run_id": run_id,
+                    "outputs": {
                         "response": response,
                         "completion_id": response.get('id', ''),
                         "model": response.get('model', ''),
-                        "provider": response.get('provider', '')
+                        "provider": response.get('provider', ''),
+                        "content": response.get('choices', [{}])[0].get('message', {}).get('content', '')
                     },
-                    end_time=end_time
-                )
-                logger.debug(f"Successfully updated LangSmith run with response")
+                    "end_time": end_time
+                }
+                
+                client.update_run(**update_data)
+                logger.debug(f"Successfully updated LangSmith run {run_id} with response")
                 
             except Exception as langsmith_error:
-                logger.warning(f"LangSmith operation failed: {str(langsmith_error)}")
+                logger.error(f"LangSmith operation failed: {str(langsmith_error)}")
                 logger.debug(f"API Response: {json.dumps(response, indent=2)}")
                 # Continue with the API response even if LangSmith logging fails
         
         except Exception as langsmith_error:
-            logger.warning(f"LangSmith logging failed: {str(langsmith_error)}")
+            logger.error(f"LangSmith logging failed: {str(langsmith_error)}")
             # Continue even if LangSmith logging fails
         
         logger.debug(f"API Response: {json.dumps(response, indent=2)}")
@@ -158,13 +162,15 @@ def call_openrouter(prompt, model="deepseek/deepseek-r1-0528-qwen3-8b:free"):
         logger.error(f"Error in API call: {str(e)}")
         # Try to log the error to LangSmith if possible
         try:
-            if 'run' in locals() and run and hasattr(run, 'id'):
-                client.update_run(
-                    run_id=run.id,
-                    error=str(e),
-                    end_time=datetime.now(timezone.utc)
-                )
+            if run_id:
+                error_data = {
+                    "run_id": run_id,
+                    "error": str(e),
+                    "end_time": datetime.now(timezone.utc)
+                }
+                client.update_run(**error_data)
+                logger.debug(f"Successfully logged error to LangSmith run {run_id}")
         except Exception as langsmith_error:
-            logger.warning(f"Failed to log error to LangSmith: {str(langsmith_error)}")
+            logger.error(f"Failed to log error to LangSmith: {str(langsmith_error)}")
             
         return {"error": f"Failed to parse JSON response: {str(e)}", "text": str(e)}
